@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 
-function execNativeCommand(command) {
+export function execNativeCommand(command) {
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`执行命令时出错: ${error.message}`);
@@ -15,8 +15,6 @@ function execNativeCommand(command) {
     });
 }
 
-export function getRemainLinesNum() {
-    execNativeCommand('tput lines');
-}
-
-getRemainLinesNum();
+export const writeOutput = (data) => {
+    process.stdout.write(data);
+};
