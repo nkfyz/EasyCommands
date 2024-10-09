@@ -15,7 +15,19 @@ export class FTerminal {
         this.max_command_num = max_command_num
 
         this.selected_id = 0
-        this.commands = ['cursor_x', 'command222', 'command3333']
+        this.curr_cmd = ''
+        this.suggest_cmds = [
+            'activate',
+            'remove',
+            'init'
+        ]
+        // TODO(nkfyz): Replace this.commands with this.suggest_cmds
+        this.commands = this.suggest_cmds
+        this.suggest_cmds_desc = [
+            'Activate a conda environment.',
+            'Remove a conda environment.',
+            'Initialize a conda environment.'
+        ]
         this.command_num = 0
         this.cursor_x = 0
         this.PERFIX = '> ';
@@ -44,6 +56,10 @@ export class FTerminal {
             
             if (inputStr === 'a'){
                 this._render_commands();
+            }
+
+            if (input === '\u001b[A'){
+                this._update_commands('up');
             }
             
             if (input === '\u001b[B'){
@@ -75,9 +91,19 @@ export class FTerminal {
         writeOutput(ansi.cursorHide);
         for (let i = 0; i < command_num; i++) {
             if (i === this.selected_id) {
-                writeOutput('\n' + chalk.green.bold(this.PERFIX + commands[i]));
+                writeOutput(
+                    '\n' +
+                    chalk.green.bold(this.PERFIX + commands[i]) + 
+                    '\t' +
+                    chalk.gray(this.suggest_cmds_desc[i])
+                );
             } else {
-                writeOutput('\n' + this.FILLME + commands[i]);
+                writeOutput(
+                    '\n' +
+                    this.FILLME + commands[i] + 
+                    '\t' +
+                    chalk.gray(this.suggest_cmds_desc[i])
+                );
             }
         }
         writeOutput(ansi.cursorLeft)
@@ -101,6 +127,15 @@ export class FTerminal {
                     this.selected_id += 1;
                 }
                 this._render_commands();
+            case 'up':
+                if ((selected_id - 1) < 0) {
+                    this._clear_commands();
+                } else {
+                    this.selected_id -= 1;
+                }
+                this._render_commands();
+            case 'enter':
+                this._clear_commands();
         }
     }
 }
