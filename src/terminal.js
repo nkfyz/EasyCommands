@@ -1,5 +1,9 @@
-import * as pty from 'node-pty';
 import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+import * as pty from 'node-pty';
+
+
 import { writeOutput } from './utils.js';
 import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
@@ -40,9 +44,14 @@ export class FTerminal {
             cwd: process.env.HOME,
             env: process.env
         });
+        this.terminal = new xterm.Terminal({
+            cols: this.cols,
+            rows: this.rows
+        });
 
         // recv data from pty
         this.pty.onData((data) => {
+            this.terminal.write(data);
             process.stdout.write(data);
         });
 
@@ -76,10 +85,8 @@ export class FTerminal {
     }
 
     _get_cursor_x() {
-        const require = createRequire(import.meta.url);
-        const getCursorPosition = require('get-cursor-position');
-        var pos = getCursorPosition.sync();
-        return pos.col - 1;
+        console.log(this.terminal.buffer.active.cursorX);
+        return this.terminal.buffer.active.cursorX;
     }
 
     _render_commands() {
@@ -112,7 +119,11 @@ export class FTerminal {
     }
 
     _clear_commands() {
-
+        this.selected_id = 0;
+        this.commands = [];
+        this.suggest_cmds = [];
+        this.suggest_cmds_desc = [];
+        this.command_num = 0;
     }
 
     _update_commands(op) {
@@ -126,16 +137,15 @@ export class FTerminal {
                 } else {
                     this.selected_id += 1;
                 }
-                this._render_commands();
             case 'up':
                 if ((selected_id - 1) < 0) {
                     this._clear_commands();
                 } else {
                     this.selected_id -= 1;
                 }
-                this._render_commands();
             case 'enter':
-                this._clear_commands();
+                // do nothing
         }
+        this._render_commands();
     }
 }
