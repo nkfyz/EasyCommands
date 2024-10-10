@@ -2,10 +2,11 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 import * as pty from 'node-pty';
-import { writeOutput } from './utils.js';
+import { writeOutput, extract_cursor_pos } from './utils.js';
 import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
+import ansiRegex from 'ansi-regex';
 
 const {Terminal} = require(`xterm-headless`);
 import { Unicode11Addon } from "@xterm/addon-unicode11";
@@ -25,18 +26,17 @@ export class FTerminal {
             'remove',
             'init'
         ]
-        // TODO(nkfyz): Replace this.commands with this.suggest_cmds
-        this.commands = this.suggest_cmds
         this.suggest_cmds_desc = [
             'Activate a conda environment.',
             'Remove a conda environment.',
             'Initialize a conda environment.'
         ]
         this.command_num = 0
-        this.cursor_x = 0
+        this.cursor_x = -1
         this.first_render = true
         this.PERFIX = '> ';
         this.FILLME = '  ';
+        this.get_position_cmd = false
 
         this.pty = pty.spawn(shell, [], {
             name: this.name,
@@ -55,12 +55,6 @@ export class FTerminal {
         this.terminal.loadAddon(unicode11Addon);
         this.terminal.unicode.activeVersion = "11";
 
-        // recv data from pty
-        this.pty.onData((data) => {
-            this.terminal.write(data);
-            process.stdout.write(data);
-        });
-
         // recv data from user
         process.stdin.setRawMode(true);
         process.stdin.resume();
@@ -71,16 +65,59 @@ export class FTerminal {
             var send_to_xterm = true;
             var send_to_pty = true;
 
-            send_to_xterm, send_to_pty = this._keyboard_controller(input);
+            if (this.get_position_cmd) {
+                var pos = inputStr.match(ansiRegex());
+                var cursor_x = extract_cursor_pos(pos[0]);
+                if (cursor_x != -1) {
+                    this.cursor_x = Number(cursor_x)
+                    writeOutput(ansi.cursorHide);
+                    this.command_num = this.suggest_cmds.length;
+                    for (let i = 0; i < this.command_num; i++) {
+                        if (i === this.selected_id) {
+                            writeOutput(
+                                '\n' + 
+                                chalk.green.bold(this.PERFIX + this.suggest_cmds[i]) + 
+                                '\t' +
+                                chalk.gray(this.suggest_cmds_desc[i])
+                            );
+                        } else {
+                            writeOutput(
+                                '\n' +
+                                this.FILLME + this.suggest_cmds[i] + 
+                                '\t' +
+                                chalk.gray(this.suggest_cmds_desc[i])
+                            );
+                        }
+                    }
+                    writeOutput(ansi.cursorLeft)
+                    writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
+                    writeOutput(ansi.cursorShow)
+                } else {
+                    console.log('Error: cannot get cursor position.')
+                }
+                this.get_position_cmd = false;
+            } else {
+                send_to_xterm, send_to_pty = this._keyboard_controller(input);
             
-            if (send_to_xterm) {
-                this.terminal.write(input);
-            }
-            if (send_to_pty) {
-                this.pty.write(inputStr);
+                if (send_to_xterm) {
+                    this.terminal.write(input);
+                }
+                if (send_to_pty) {
+                    this.pty.write(inputStr);
+                }
             }
         });
 
+        this.pty.onData((data) => {
+            this.terminal.write(data);
+            process.stdout.write(data);
+        });
+
+    }
+
+    async _get_cursor_x() {
+        this.get_position_cmd = true;
+        process.stdout.write(ansi.cursorGetPosition);
     }
 
     _keyboard_controller(input) {
@@ -93,12 +130,9 @@ export class FTerminal {
                 break;
             case '\u001b[A':
                 this._update_commands('up');
-                send_to_xterm = false;
-                send_to_pty = false;
                 break;
             case '\u001b[B':
                 this._update_commands('down');
-                send_to_xterm = false;
                 break;
             case '\u0003':
                 process.exit();
@@ -112,42 +146,35 @@ export class FTerminal {
         return send_to_xterm, send_to_pty;
     }
 
-    _get_cursor_x() {
-        return this.terminal.buffer.active.cursorX;
-    }
-
     _render_commands() {
-        var commands = this.commands;
-        this.command_num = this.commands.length;
-        var command_num = this.command_num;
+        this.command_num = this.suggest_cmds.length;
         
         if (this.first_render) {
-            this.cursor_x = this._get_cursor_x();
+            this._get_cursor_x();
         } else {
             this.first_render = false;
-        }
-
-        writeOutput(ansi.cursorHide);
-        for (let i = 0; i < command_num; i++) {
-            if (i === this.selected_id) {
-                writeOutput(
-                    '\n' +
-                    chalk.green.bold(this.PERFIX + commands[i]) + 
-                    '\t' +
-                    chalk.gray(this.suggest_cmds_desc[i])
-                );
-            } else {
-                writeOutput(
-                    '\n' +
-                    this.FILLME + commands[i] + 
-                    '\t' +
-                    chalk.gray(this.suggest_cmds_desc[i])
-                );
+            writeOutput(ansi.cursorHide);
+            for (let i = 0; i < this.command_num; i++) {
+                if (i === this.selected_id) {
+                    writeOutput(
+                        '\n' + 
+                        chalk.green.bold(this.PERFIX + this.suggest_cmds[i]) + 
+                        '\t' +
+                        chalk.gray(this.suggest_cmds_desc[i])
+                    );
+                } else {
+                    writeOutput(
+                        '\n' +
+                        this.FILLME + this.suggest_cmds[i] + 
+                        '\t' +
+                        chalk.gray(this.suggest_cmds_desc[i])
+                    );
+                }
             }
+            writeOutput(ansi.cursorLeft)
+            writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
+            writeOutput(ansi.cursorShow)
         }
-        writeOutput(ansi.cursorLeft)
-        writeOutput(ansi.cursorMove(this.cursor_x, -command_num))
-        writeOutput(ansi.cursorShow)
     }
 
     _clear_commands() {

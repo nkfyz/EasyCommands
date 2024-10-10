@@ -18,3 +18,7 @@ export function execNativeCommand(command) {
 export const writeOutput = (data) => {
     process.stdout.write(data);
 };
+
+export function extract_cursor_pos(data) {
+    return data.split(';')[1].replace('R', '').replace('\n', '');
+};
