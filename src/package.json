@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@xterm/addon-unicode11": "^0.8.0",
     "@xterm/headless": "^5.5.0",
     "@xterm/xterm": "^5.5.0",
     "ansi-escapes": "^7.0.0",

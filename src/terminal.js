@@ -2,13 +2,13 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 import * as pty from 'node-pty';
-
-
 import { writeOutput } from './utils.js';
 import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
 
+const {Terminal} = require(`xterm-headless`);
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 export class FTerminal {
     constructor(name, shell, rows, cols, max_command_num) {
@@ -34,6 +34,7 @@ export class FTerminal {
         ]
         this.command_num = 0
         this.cursor_x = 0
+        this.first_render = true
         this.PERFIX = '> ';
         this.FILLME = '  ';
 
@@ -44,10 +45,15 @@ export class FTerminal {
             cwd: process.env.HOME,
             env: process.env
         });
-        this.terminal = new xterm.Terminal({
+
+        const unicode11Addon = new Unicode11Addon();
+        this.terminal = new Terminal({
+            allowProposedApi: true,
             cols: this.cols,
             rows: this.rows
         });
+        this.terminal.loadAddon(unicode11Addon);
+        this.terminal.unicode.activeVersion = "11";
 
         // recv data from pty
         this.pty.onData((data) => {
@@ -62,38 +68,64 @@ export class FTerminal {
 
         process.stdin.on('data', (input) => {
             const inputStr = input.toString();
-            
-            if (inputStr === 'a'){
-                this._render_commands();
-            }
+            var send_to_xterm = true;
+            var send_to_pty = true;
 
-            if (input === '\u001b[A'){
-                this._update_commands('up');
-            }
+            send_to_xterm, send_to_pty = this._keyboard_controller(input);
             
-            if (input === '\u001b[B'){
-                this._update_commands('down');
+            if (send_to_xterm) {
+                this.terminal.write(input);
             }
-        
-            if (input === '\u0003') { // '\u0003' 是 Ctrl+C
-                process.exit();
+            if (send_to_pty) {
+                this.pty.write(inputStr);
             }
-        
-            this.pty.write(inputStr);
         });
 
     }
 
+    _keyboard_controller(input) {
+        var send_to_xterm = true;
+        var send_to_pty = true;
+
+        switch(input) {
+            case 'a':
+                this._render_commands();
+                break;
+            case '\u001b[A':
+                this._update_commands('up');
+                send_to_xterm = false;
+                send_to_pty = false;
+                break;
+            case '\u001b[B':
+                this._update_commands('down');
+                send_to_xterm = false;
+                break;
+            case '\u0003':
+                process.exit();
+            case '\u0008': // backsapce
+            case '\b':
+            case '\u007F':
+                send_to_xterm = false;
+                break;
+        }
+
+        return send_to_xterm, send_to_pty;
+    }
+
     _get_cursor_x() {
-        console.log(this.terminal.buffer.active.cursorX);
         return this.terminal.buffer.active.cursorX;
     }
 
     _render_commands() {
         var commands = this.commands;
-        this.command_num = commands.length;
+        this.command_num = this.commands.length;
         var command_num = this.command_num;
-        this.cursor_x = this._get_cursor_x();
+        
+        if (this.first_render) {
+            this.cursor_x = this._get_cursor_x();
+        } else {
+            this.first_render = false;
+        }
 
         writeOutput(ansi.cursorHide);
         for (let i = 0; i < command_num; i++) {
@@ -124,6 +156,7 @@ export class FTerminal {
         this.suggest_cmds = [];
         this.suggest_cmds_desc = [];
         this.command_num = 0;
+        this.first_render = true;
     }
 
     _update_commands(op) {
@@ -137,14 +170,16 @@ export class FTerminal {
                 } else {
                     this.selected_id += 1;
                 }
+                break;
             case 'up':
                 if ((selected_id - 1) < 0) {
                     this._clear_commands();
                 } else {
                     this.selected_id -= 1;
                 }
-            case 'enter':
-                // do nothing
+                break;
+            // case 'enter':
+            //     console.log('enter')
         }
         this._render_commands();
     }
