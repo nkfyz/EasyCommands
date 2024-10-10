@@ -36,7 +36,16 @@ export class FTerminal {
         this.first_render = true
         this.PERFIX = '> ';
         this.FILLME = '  ';
-        this.get_position_cmd = false
+        this.render_thread = false;
+        this.clean_command = false;
+
+        this.status = [
+            'normal',
+            'first_render',
+            'after_render',
+            'after_clean'
+        ]
+        this.curr_status = 'normal'
 
         this.pty = pty.spawn(shell, [], {
             name: this.name,
@@ -46,15 +55,6 @@ export class FTerminal {
             env: process.env
         });
 
-        const unicode11Addon = new Unicode11Addon();
-        this.terminal = new Terminal({
-            allowProposedApi: true,
-            cols: this.cols,
-            rows: this.rows
-        });
-        this.terminal.loadAddon(unicode11Addon);
-        this.terminal.unicode.activeVersion = "11";
-
         // recv data from user
         process.stdin.setRawMode(true);
         process.stdin.resume();
@@ -62,46 +62,16 @@ export class FTerminal {
 
         process.stdin.on('data', (input) => {
             const inputStr = input.toString();
-            var send_to_xterm = true;
             var send_to_pty = true;
 
-            if (this.get_position_cmd) {
+            if (this.render_thread) {
                 var pos = inputStr.match(ansiRegex());
-                var cursor_x = extract_cursor_pos(pos[0]);
-                if (cursor_x != -1) {
-                    this.cursor_x = Number(cursor_x)
-                    writeOutput(ansi.cursorHide);
-                    this.command_num = this.suggest_cmds.length;
-                    for (let i = 0; i < this.command_num; i++) {
-                        if (i === this.selected_id) {
-                            writeOutput(
-                                '\n' + 
-                                chalk.green.bold(this.PERFIX + this.suggest_cmds[i]) + 
-                                '\t' +
-                                chalk.gray(this.suggest_cmds_desc[i])
-                            );
-                        } else {
-                            writeOutput(
-                                '\n' +
-                                this.FILLME + this.suggest_cmds[i] + 
-                                '\t' +
-                                chalk.gray(this.suggest_cmds_desc[i])
-                            );
-                        }
-                    }
-                    writeOutput(ansi.cursorLeft)
-                    writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
-                    writeOutput(ansi.cursorShow)
-                } else {
-                    console.log('Error: cannot get cursor position.')
-                }
-                this.get_position_cmd = false;
+                this.cursor_x = Number(extract_cursor_pos(pos[0]));
+                this.selected_id = 0;
+                this._render_commands();
+                this.render_thread = false;
             } else {
-                send_to_xterm, send_to_pty = this._keyboard_controller(input);
-            
-                if (send_to_xterm) {
-                    this.terminal.write(input);
-                }
+                send_to_pty = this._keyboard_controller(input);
                 if (send_to_pty) {
                     this.pty.write(inputStr);
                 }
@@ -109,76 +79,92 @@ export class FTerminal {
         });
 
         this.pty.onData((data) => {
-            this.terminal.write(data);
+            // this.terminal.write(data);
             process.stdout.write(data);
         });
 
     }
 
-    async _get_cursor_x() {
-        this.get_position_cmd = true;
-        process.stdout.write(ansi.cursorGetPosition);
-    }
-
     _keyboard_controller(input) {
-        var send_to_xterm = true;
         var send_to_pty = true;
 
         switch(input) {
             case 'a':
-                this._render_commands();
+                this._show_commands();
                 break;
             case '\u001b[A':
-                this._update_commands('up');
+                if (this.selected_id >= 0) {
+                    this._update_commands('up');
+                    send_to_pty = false;
+                } else {
+                    if (this.selected_id == -2) {
+                        // after clear
+                        send_to_pty = false
+                        this.selected_id = -1
+                    } else if (this.selected_id != -1) {
+                        // there is no suggesed commands
+                    }
+                }
                 break;
             case '\u001b[B':
                 this._update_commands('down');
                 break;
             case '\u0003':
                 process.exit();
-            case '\u0008': // backsapce
-            case '\b':
-            case '\u007F':
-                send_to_xterm = false;
-                break;
+            // case '\u0008': // backsapce
+            // case '\b':
+            // case '\u007F':
+            //     break;
         }
 
-        return send_to_xterm, send_to_pty;
+        return send_to_pty;
+    }
+
+    _show_commands() {
+        this.render_thread = true;
+        process.stdout.write(ansi.cursorGetPosition);
     }
 
     _render_commands() {
+        writeOutput(ansi.cursorHide);
         this.command_num = this.suggest_cmds.length;
-        
-        if (this.first_render) {
-            this._get_cursor_x();
-        } else {
-            this.first_render = false;
-            writeOutput(ansi.cursorHide);
-            for (let i = 0; i < this.command_num; i++) {
-                if (i === this.selected_id) {
-                    writeOutput(
-                        '\n' + 
-                        chalk.green.bold(this.PERFIX + this.suggest_cmds[i]) + 
-                        '\t' +
-                        chalk.gray(this.suggest_cmds_desc[i])
-                    );
-                } else {
-                    writeOutput(
-                        '\n' +
-                        this.FILLME + this.suggest_cmds[i] + 
-                        '\t' +
-                        chalk.gray(this.suggest_cmds_desc[i])
-                    );
-                }
+        for (let i = 0; i < this.command_num; i++) {
+            if (i === this.selected_id) {
+                writeOutput(
+                    '\n' + 
+                    chalk.green.bold(this.PERFIX + this.suggest_cmds[i]) + 
+                    '\t' +
+                    chalk.gray(this.suggest_cmds_desc[i])
+                );
+            } else {
+                writeOutput(
+                    '\n' +
+                    this.FILLME + this.suggest_cmds[i] + 
+                    '\t' +
+                    chalk.gray(this.suggest_cmds_desc[i])
+                );
             }
-            writeOutput(ansi.cursorLeft)
-            writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
-            writeOutput(ansi.cursorShow)
         }
+        writeOutput(ansi.cursorLeft)
+        writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
+        writeOutput(ansi.cursorShow)
     }
 
     _clear_commands() {
-        this.selected_id = 0;
+        writeOutput(ansi.cursorHide);
+        this.command_num = this.suggest_cmds.length;
+        for (let i = 0; i < this.command_num; i++) {
+                writeOutput(
+                    '\n' +
+                    ansi.cursorLeft +  
+                    ansi.eraseEndLine
+                );
+        }
+        writeOutput(ansi.cursorLeft)
+        writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
+        writeOutput(ansi.cursorShow)
+
+        this.selected_id = -2;
         this.commands = [];
         this.suggest_cmds = [];
         this.suggest_cmds_desc = [];
@@ -197,17 +183,19 @@ export class FTerminal {
                 } else {
                     this.selected_id += 1;
                 }
+                this._render_commands();
                 break;
             case 'up':
                 if ((selected_id - 1) < 0) {
                     this._clear_commands();
                 } else {
                     this.selected_id -= 1;
+                    this._render_commands();
                 }
                 break;
             // case 'enter':
             //     console.log('enter')
         }
-        this._render_commands();
+        
     }
 }
