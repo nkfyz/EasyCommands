@@ -8,8 +8,6 @@ import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
 import ansiRegex from 'ansi-regex';
 
-const {Terminal} = require(`xterm-headless`);
-import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 export class FTerminal {
     constructor(name, shell, rows, cols, max_command_num) {
@@ -31,21 +29,18 @@ export class FTerminal {
             'Remove a conda environment.',
             'Initialize a conda environment.'
         ]
-        this.command_num = 0
+        this.suggest_cmds_num = 0
         this.cursor_x = -1
-        this.first_render = true
         this.PERFIX = '> ';
         this.FILLME = '  ';
-        this.render_thread = false;
-        this.clean_command = false;
 
-        this.status = [
+        // normal ----> render ----> selection ----> normal
+        this.status_list = [
             'normal',
-            'first_render',
-            'after_render',
-            'after_clean'
+            'selection', // suggested commands is shown
+            'render', // first render the suggested commands
         ]
-        this.curr_status = 'normal'
+        this.status = 'normal'
 
         this.pty = pty.spawn(shell, [], {
             name: this.name,
@@ -55,7 +50,6 @@ export class FTerminal {
             env: process.env
         });
 
-        // recv data from user
         process.stdin.setRawMode(true);
         process.stdin.resume();
         process.stdin.setEncoding('utf8');
@@ -64,25 +58,24 @@ export class FTerminal {
             const inputStr = input.toString();
             var send_to_pty = true;
 
-            if (this.render_thread) {
+            if (this.status == 'render') {
                 var pos = inputStr.match(ansiRegex());
                 this.cursor_x = Number(extract_cursor_pos(pos[0]));
                 this.selected_id = 0;
                 this._render_commands();
-                this.render_thread = false;
-            } else {
+                this.status = 'selection';
+            } else if (this.status == 'normal' || this.status == 'selection') {
                 send_to_pty = this._keyboard_controller(input);
                 if (send_to_pty) {
                     this.pty.write(inputStr);
                 }
             }
+            
         });
 
         this.pty.onData((data) => {
-            // this.terminal.write(data);
             process.stdout.write(data);
         });
-
     }
 
     _keyboard_controller(input) {
@@ -90,24 +83,30 @@ export class FTerminal {
 
         switch(input) {
             case 'a':
+                // this.curr_cmd += input;
+                // var this.suggest_cmds = check();
+                // if (this.suggest_cmds.length > 0) {
+                //     this._show_commands();
+                // }
                 this._show_commands();
                 break;
             case '\u001b[A':
-                if (this.selected_id >= 0) {
+                // 普通模式：不管
+                // selection模式：不发送
+                // clean模式：发送
+                if (this.status == 'normal') {
+                    // Do nothing
+                } else if (this.status == 'selection') {
                     this._update_commands('up');
                     send_to_pty = false;
-                } else {
-                    if (this.selected_id == -2) {
-                        // after clear
-                        send_to_pty = false
-                        this.selected_id = -1
-                    } else if (this.selected_id != -1) {
-                        // there is no suggesed commands
-                    }
                 }
                 break;
             case '\u001b[B':
-                this._update_commands('down');
+                if (this.status == 'normal') {
+                    // Do nothing
+                } else if (this.status == 'selection') {
+                    this._update_commands('down');
+                }
                 break;
             case '\u0003':
                 process.exit();
@@ -121,14 +120,14 @@ export class FTerminal {
     }
 
     _show_commands() {
-        this.render_thread = true;
+        this.status = 'render';
         process.stdout.write(ansi.cursorGetPosition);
     }
 
     _render_commands() {
         writeOutput(ansi.cursorHide);
-        this.command_num = this.suggest_cmds.length;
-        for (let i = 0; i < this.command_num; i++) {
+        this.suggest_cmds_num = this.suggest_cmds.length;
+        for (let i = 0; i < this.suggest_cmds_num; i++) {
             if (i === this.selected_id) {
                 writeOutput(
                     '\n' + 
@@ -146,7 +145,7 @@ export class FTerminal {
             }
         }
         writeOutput(ansi.cursorLeft)
-        writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
+        writeOutput(ansi.cursorMove(this.cursor_x, -this.suggest_cmds_num))
         writeOutput(ansi.cursorShow)
     }
 
@@ -164,21 +163,19 @@ export class FTerminal {
         writeOutput(ansi.cursorMove(this.cursor_x, -this.command_num))
         writeOutput(ansi.cursorShow)
 
-        this.selected_id = -2;
+        this.selected_id = -1;
         this.commands = [];
         this.suggest_cmds = [];
         this.suggest_cmds_desc = [];
-        this.command_num = 0;
-        this.first_render = true;
+        this.suggest_cmds_num = 0;
+        this.status = 'normal';
     }
 
     _update_commands(op) {
-        var selected_id = this.selected_id;
-        var command_num = this.command_num;
 
         switch(op) {
             case 'down':
-                if ((selected_id + 1) >= command_num) {
+                if ((this.selected_id + 1) >= this.suggest_cmds_num) {
                     this.selected_id = 0;
                 } else {
                     this.selected_id += 1;
@@ -186,7 +183,7 @@ export class FTerminal {
                 this._render_commands();
                 break;
             case 'up':
-                if ((selected_id - 1) < 0) {
+                if ((this.selected_id - 1) < 0) {
                     this._clear_commands();
                 } else {
                     this.selected_id -= 1;
