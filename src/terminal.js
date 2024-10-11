@@ -34,6 +34,8 @@ export class FTerminal {
         this.PERFIX = '> ';
         this.FILLME = '  ';
 
+        this.text_recorder = ''
+
         // normal ----> render ----> selection ----> normal
         this.status_list = [
             'normal',
@@ -56,21 +58,32 @@ export class FTerminal {
 
         process.stdin.on('data', (input) => {
             const inputStr = input.toString();
-            var send_to_pty = true;
 
-            if (this.status == 'render') {
-                var pos = inputStr.match(ansiRegex());
-                this.cursor_x = Number(extract_cursor_pos(pos[0]));
-                this.selected_id = 0;
-                this._render_commands();
-                this.status = 'selection';
-            } else if (this.status == 'normal' || this.status == 'selection') {
-                send_to_pty = this._keyboard_controller(input);
-                if (send_to_pty) {
-                    this.pty.write(inputStr);
-                }
-            }
+            console.log(inputStr);
             
+
+            if (inputStr === '\u0003') {
+                process.exit();
+            }
+            // var send_to_pty = true;
+
+            // if (this.status == 'render') {
+            //     var pos = inputStr.match(ansiRegex());
+            //     this.cursor_x = Number(extract_cursor_pos(pos[0]));
+            //     this.selected_id = 0;
+            //     this._render_commands();
+            //     this.status = 'selection';
+            // } else if (this.status == 'normal' || this.status == 'selection') {
+            //     send_to_pty = this._keyboard_controller(input);
+            //     if (send_to_pty) {
+            //         this.pty.write(inputStr);
+            //     }
+            // }
+            if (inputStr === '\u007F') {
+                writeOutput('\b \b');
+            } else {
+                this.pty.write(inputStr);
+            }
         });
 
         this.pty.onData((data) => {
@@ -110,12 +123,11 @@ export class FTerminal {
                 break;
             case '\u0003':
                 process.exit();
-            // case '\u0008': // backsapce
-            // case '\b':
-            // case '\u007F':
-            //     break;
+            case '\u0008': // backsapce
+            case '\b':
+            case '\u007F':
+                break;
         }
-
         return send_to_pty;
     }
 
