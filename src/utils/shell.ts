@@ -9,7 +9,6 @@ import fs from "node:fs";
 import url from "node:url";
 import os from "node:os";
 import fsAsync from "node:fs/promises";
-import log from "./log.js";
 
 type KeyPressEvent = [string | null | undefined, KeyPress];
 
@@ -70,7 +69,6 @@ const findPareentProcess = async () => {
   try {
     return (await find("pid", process.ppid)).at(0);
   } catch (e) {
-    log.debug({ msg: `error finding parent process: ${e}` });
   }
 };
 

@@ -5,8 +5,16 @@ import isterm from "../isterm/index.js";
 import { Shell } from "../utils/shell.js";
 import { inferShell } from "../utils/shell.js";
 import { SuggestionManager, Suggestion } from "../core/suggestionManager.js";
-import { KeyPressEvent } from "./suggestionManager.js";
 import readline from "node:readline";
+
+export type KeyPressEvent = [string | null | undefined, KeyPress];
+
+type KeyPress = {
+  sequence: string;
+  name: string;
+  ctrl: boolean;
+  shift: boolean;
+};
 
 
 const writeOutput = (data: string) => {

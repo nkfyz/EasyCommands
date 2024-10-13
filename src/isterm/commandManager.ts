@@ -5,7 +5,6 @@ import convert from "color-convert";
 import { IBufferCell, IBufferLine, IMarker, Terminal } from "@xterm/headless";
 import os from "node:os";
 import { getShellPromptRewrites, Shell } from "../utils/shell.js";
-import log from "../utils/log.js";
 
 const maxPromptPollDistance = 10;
 
@@ -257,7 +256,6 @@ export class CommandManager {
       }
     }
 
-    log.debug({ msg: "command text", preCursorCommand, postCursorCommand, suggestion });
     return { suggestion, preCursorCommand, postCursorCommand };
   }
 
@@ -325,13 +323,5 @@ export class CommandManager {
       this.#activeCommand.cursorTerminated = cursorAtEndOfInput;
     }
 
-    log.debug({
-      msg: "cmd manager state",
-      ...this.#activeCommand,
-      promptEndMarker: this.#activeCommand.promptEndMarker?.line,
-      promptStartMarker: this.#activeCommand.promptStartMarker?.line,
-      cursorX: this.#terminal.buffer.active.cursorX,
-      cursorY: globalCursorPosition,
-    });
   }
 }

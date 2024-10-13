@@ -17,7 +17,6 @@ import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "..
 import { Terminal } from "@xterm/headless";
 import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
-import log from "../utils/log.js";
 import { gitBashPath } from "../utils/shell.js";
 import styles from "ansi-styles";
 import * as ansi from "../utils/ansi.js";
@@ -76,7 +75,6 @@ export class ISTerm implements IPty {
     this.#ptyEmitter = new EventEmitter();
     this.#pty.onData((data) => {
       this.#term.write(data, () => {
-        log.debug({ msg: "parsing data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) });
         this.#commandManager.termSync();
         this.#ptyEmitter.emit(ISTermOnDataEvent, data);
       });
@@ -147,7 +145,6 @@ export class ISTerm implements IPty {
           const promptTerminator = lastPromptLine.substring(lastPromptLine.lastIndexOf(" ")).trim();
           if (promptTerminator) {
             this.#commandManager.promptTerminator = promptTerminator;
-            log.debug({ msg: "prompt terminator", promptTerminator });
           }
         }
         break;
@@ -187,7 +184,6 @@ export class ISTerm implements IPty {
   }
 
   write(data: string): void {
-    log.debug({ msg: "reading data", data, bytes: Uint8Array.from([...data].map((c) => c.charCodeAt(0))) });
     this.#pty.write(data);
   }
 
