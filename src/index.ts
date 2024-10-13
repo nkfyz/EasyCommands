@@ -1,3 +1,3 @@
-import { render } from "./ui/root.ts";
+import { render } from "./core/root.ts";
 
 render();

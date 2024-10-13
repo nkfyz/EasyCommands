@@ -2,26 +2,19 @@ import ansi from "ansi-escapes";
 import chalk from "chalk";
 
 import { ISTerm } from "../isterm/pty.js";
+import { writeOutput, PERFIX, FILLME, KeyPressEvent } from "../utils/common.js";
+import process from 'node:process';
 
 
 export class Suggestion {
     name: string;
     description: String;
 
-
     constructor(name: string, description: String) {
         this.name = name;
         this.description = description
     }
 }
-
-
-const writeOutput = (data: string) => {
-    process.stdout.write(data);
-  };
-
-const PERFIX = '> ';
-const FILLME = '  ';
 
 
 export class SuggestionManager {
@@ -35,7 +28,24 @@ export class SuggestionManager {
         this.suggestions = [];
     }
 
-    _load_suggestions(cmd: string, cursor_x: number) {
+    process_keypress(term: ISTerm, keyPress: KeyPressEvent) {
+            this._load_suggestions();
+    }
+
+    handle_keypress(keyPress: KeyPressEvent): boolean {
+        if (keyPress[1].name == "down" || 
+            keyPress[1].name == "up" || 
+            keyPress[1].name == "return") {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    _load_suggestions() {
+        this._clear_suggestions();
+
+        const cmd = this.term.getCommandState().commandText
         if (cmd && cmd == 'git') {
             this.suggestions = [
                 new Suggestion('add', 'Add file contents to the index'),
@@ -46,8 +56,6 @@ export class SuggestionManager {
 
         if (this.suggestions.length != 0) {
             this._render_suggestions();
-        } else {
-            this._clear_suggestions();
         }
     }
 
@@ -73,7 +81,6 @@ export class SuggestionManager {
                 )
             }
         }
-
         writeOutput(
             ansi.cursorLeft + 
             ansi.cursorMove(cursor_x, -this.suggestions.length) + 
@@ -81,12 +88,12 @@ export class SuggestionManager {
         )
     }
 
-    // return: whether the keypress should be sent to terminal
-    _update_suggestions(op: String): boolean {
+    _update_suggestions(keyPress: KeyPressEvent): boolean {
         if (this.suggestions.length == 0) {
-            return true;
+            return false;
         }
 
+        const op = keyPress[1].name;
         switch(op) {
             case "up":
                 if (this.activate_id == 0) {
@@ -109,7 +116,7 @@ export class SuggestionManager {
                 break;
                 
         }
-        return false;
+        return true;
     }
 
     _clear_suggestions() {
