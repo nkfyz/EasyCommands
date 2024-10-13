@@ -1,32 +1,7 @@
-import * as pty from 'node-pty';
-import * as os from 'node:os';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const xterm = require('@xterm/headless');
 
-const shell = os.platform() === 'win32' ? 'powershell.exe' : 'zsh';
-const cols = 80;
-const rows = 30;
+const term = new xterm.Terminal({ allowProposedApi: true, cols: 80, rows: 30 })
 
-const mypty = pty.spawn(shell, [], {
-    name: 'hello',
-    cols: cols,
-    rows: rows,
-    cwd: process.env.HOME,
-    env: process.env
-});
-
-process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-
-process.stdin.on('data', (input) => {
-    const inputStr = input.toString();
-
-
-    
-    mypty.write(inputStr);
-    
-    
-});
-
-mypty.onData((data) => {
-    process.stdout.write(data);
-});
+term.write('Hello, World!\r\n');

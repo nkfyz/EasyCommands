@@ -7,7 +7,10 @@ import ansi from "ansi-escapes";
 import wrapAnsi from "wrap-ansi";
 import chalk from "chalk";
 import ansiRegex from 'ansi-regex';
+import readline from "node:readline";
 
+
+export const getBackspaceSequence = (press, shell) => "\u007F"
 
 export class FTerminal {
     constructor(name, shell, rows, cols, max_command_num) {
@@ -16,25 +19,6 @@ export class FTerminal {
         this.rows = rows
         this.cols = cols
         this.max_command_num = max_command_num
-
-        this.selected_id = 0
-        this.curr_cmd = ''
-        this.suggest_cmds = [
-            'activate',
-            'remove',
-            'init'
-        ]
-        this.suggest_cmds_desc = [
-            'Activate a conda environment.',
-            'Remove a conda environment.',
-            'Initialize a conda environment.'
-        ]
-        this.suggest_cmds_num = 0
-        this.cursor_x = -1
-        this.PERFIX = '> ';
-        this.FILLME = '  ';
-
-        this.text_recorder = ''
 
         // normal ----> render ----> selection ----> normal
         this.status_list = [
@@ -53,38 +37,55 @@ export class FTerminal {
         });
 
         process.stdin.setRawMode(true);
-        process.stdin.resume();
-        process.stdin.setEncoding('utf8');
+        // process.stdin.resume();
+        // process.stdin.setEncoding('utf8');
 
-        process.stdin.on('data', (input) => {
-            const inputStr = input.toString();
+        // process.stdin.on('data', (input) => {
+        //     const inputStr = input.toString();            
 
-            console.log(inputStr);
+        //     if (inputStr === '\u0003') {
+        //         process.exit();
+        //     }
+        //     // var send_to_pty = true;
+
+        //     // if (this.status == 'render') {
+        //     //     var pos = inputStr.match(ansiRegex());
+        //     //     this.cursor_x = Number(extract_cursor_pos(pos[0]));
+        //     //     this.selected_id = 0;
+        //     //     this._render_commands();
+        //     //     this.status = 'selection';
+        //     // } else if (this.status == 'normal' || this.status == 'selection') {
+        //     //     send_to_pty = this._keyboard_controller(input);
+        //     //     if (send_to_pty) {
+        //     //         this.pty.write(inputStr);
+        //     //     }
+        //     // }
+
+        //     // if (inputStr === '\u007F') {
+        //     //     // backspace
+        //     // } else {
+        //     //     this.pty.write(inputStr);
+        //     // }
+
+        //     this.pty.write(inputStr);
+        // });
+
+        readline.emitKeypressEvents(process.stdin);
+        process.stdin.on("keypress", (str, key) => {
             
 
-            if (inputStr === '\u0003') {
+
+            if (key.ctrl && key.name === 'c') {
                 process.exit();
             }
-            // var send_to_pty = true;
 
-            // if (this.status == 'render') {
-            //     var pos = inputStr.match(ansiRegex());
-            //     this.cursor_x = Number(extract_cursor_pos(pos[0]));
-            //     this.selected_id = 0;
-            //     this._render_commands();
-            //     this.status = 'selection';
-            // } else if (this.status == 'normal' || this.status == 'selection') {
-            //     send_to_pty = this._keyboard_controller(input);
-            //     if (send_to_pty) {
-            //         this.pty.write(inputStr);
-            //     }
-            // }
-            if (inputStr === '\u007F') {
-                writeOutput('\b \b');
+            if (key.name === 'backspace') {
+                this.pty.write(getBackspaceSequence(key, this.shell));
             } else {
-                this.pty.write(inputStr);
+                this.pty.write(key.sequence);
             }
-        });
+
+          });
 
         this.pty.onData((data) => {
             process.stdout.write(data);
