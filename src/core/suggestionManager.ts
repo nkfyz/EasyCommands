@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { ISTerm } from "../isterm/pty.js";
 import { writeOutput, PERFIX, FILLME, KeyPressEvent } from "../utils/common.js";
 import process from 'node:process';
+import { generate_commands, CommandGenerator } from "./runtime.js";
 
 
 export class Suggestion {
@@ -21,14 +22,17 @@ export class SuggestionManager {
     term: ISTerm;
     activate_id: number;
     suggestions: Suggestion[];
+    commandGenerator: CommandGenerator;
 
     constructor(term: ISTerm) {
         this.term = term;
         this.activate_id = 0;
         this.suggestions = [];
+
+        this.commandGenerator = new CommandGenerator();
     }
 
-    process_keypress(term: ISTerm, keyPress: KeyPressEvent) {
+    render_suggestions() {
             this._load_suggestions();
     }
 
@@ -43,19 +47,17 @@ export class SuggestionManager {
     }
 
     _load_suggestions() {
-        this._clear_suggestions();
-
-        const cmd = this.term.getCommandState().commandText
-        if (cmd && cmd == 'git') {
-            this.suggestions = [
-                new Suggestion('add', 'Add file contents to the index'),
-                new Suggestion('commit', 'Record changes to the repository'),
-                new Suggestion('status', 'Show the working tree status')
-            ]
-        }
-
-        if (this.suggestions.length != 0) {
-            this._render_suggestions();
+        const cmd = this.term.getCommandState().commandText;
+        if (cmd) {
+            const suggestions = this.commandGenerator.generate_commands(cmd);
+            if (suggestions.length > 0) {
+                this.suggestions = suggestions;
+                this._render_suggestions();
+            } else {
+                this._clear_suggestions();
+            }
+        } else {
+            // todo
         }
     }
 
@@ -67,6 +69,7 @@ export class SuggestionManager {
                 writeOutput(
                     ansi.cursorHide + 
                     '\n' + 
+                    ansi.eraseLine + 
                     chalk.green.bold(PERFIX + this.suggestions[i].name) + 
                     '\t' +
                     chalk.gray(this.suggestions[i].description)
@@ -75,6 +78,7 @@ export class SuggestionManager {
                 writeOutput(
                     ansi.cursorHide + 
                     '\n' + 
+                    ansi.eraseLine + 
                     FILLME + this.suggestions[i].name + 
                     '\t' +
                     chalk.gray(this.suggestions[i].description)
@@ -88,7 +92,7 @@ export class SuggestionManager {
         )
     }
 
-    _update_suggestions(keyPress: KeyPressEvent): boolean {
+    update_suggestions(keyPress: KeyPressEvent): boolean {
         if (this.suggestions.length == 0) {
             return false;
         }
@@ -141,6 +145,6 @@ export class SuggestionManager {
     _writeback_suggestion() {
         const suggestion = this.suggestions[this.activate_id];
         this._clear_suggestions();
-        writeOutput(suggestion.name);
+        this.term.write(suggestion.name);
     }
 }
