@@ -64,6 +64,9 @@ export class SuggestionManager {
     _render_suggestions() {
         const cursor_x = this.term.getCursorState().cursorX;
 
+        /*
+            Render commands.
+        */
         for (let i=0; i<this.suggestions.length; i++) {
             if (i === this.activate_id) {
                 writeOutput(
@@ -85,9 +88,29 @@ export class SuggestionManager {
                 )
             }
         }
+
+        /*
+            Render page information.
+        */
+        writeOutput(
+            '\n' + 
+            ansi.cursorLeft + 
+            ansi.eraseEndLine + 
+            chalk.gray(
+                '  [' + 
+                (this.activate_id + 1) + 
+                '/' + 
+                this.suggestions.length + 
+                ']'
+            )
+        )
+
+        /*
+            Get back to command line.
+        */
         writeOutput(
             ansi.cursorLeft + 
-            ansi.cursorMove(cursor_x, -this.suggestions.length) + 
+            ansi.cursorMove(cursor_x, -this.suggestions.length - 1) + 
             ansi.cursorShow
         )
     }
@@ -127,7 +150,7 @@ export class SuggestionManager {
         const cursor_x = this.term.getCursorState().cursorX;
 
         writeOutput(ansi.cursorHide);
-        for (let i = 0; i < this.suggestions.length; i++) {
+        for (let i = 0; i < this.suggestions.length + 1; i++) {
                 writeOutput(
                     '\n' +
                     ansi.cursorLeft +  
@@ -135,7 +158,9 @@ export class SuggestionManager {
                 );
         }
         writeOutput(ansi.cursorLeft)
-        writeOutput(ansi.cursorMove(cursor_x, -this.suggestions.length))
+        // The page information occupies an additional line,
+        // hence we need to move the cursor back one more line [-(length+1)].
+        writeOutput(ansi.cursorMove(cursor_x, -this.suggestions.length - 1))
         writeOutput(ansi.cursorShow)
 
         this.activate_id = 0;
