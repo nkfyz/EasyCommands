@@ -15,7 +15,8 @@ export class CommandGenerator {
         if (!cmd) {
             // todo
         } else {
-            const cmd_queue = cmd.split(" ");
+            const cmd_queue_with_space = cmd.split(" ");
+            const cmd_queue = cmd_queue_with_space.filter(item => item !== '');
             var spec = this.spec;
             for (let i=0; i<cmd_queue.length; i++) {
                 spec = spec.subcommands[cmd_queue[i]];

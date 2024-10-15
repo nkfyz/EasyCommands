@@ -17,6 +17,8 @@ export async function render() {
     if (process.stdin.isTTY) process.stdin.setRawMode(true);
     readline.emitKeypressEvents(process.stdin);
 
+    var generate_flag = false;
+
     writeOutput(ansi.clearTerminal);
     writeOutput(chalk.red("---------------------------------------------------------------------\n"));
     writeOutput(chalk.red("| Welcome to EasyCommands Type 'git' and press space to see suggestions. |\n"));
@@ -24,7 +26,10 @@ export async function render() {
 
     term.onData((data) => {
         writeOutput(data);
-        suggestionManager.render_suggestions();
+        if (generate_flag) {
+            suggestionManager.render_suggestions();
+            generate_flag = false;
+        }
     });
 
     process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
@@ -35,9 +40,13 @@ export async function render() {
             3. `down`       move down the suggestion list
             4. `return`     select the suggestion
         */
-
         if (keyPress[1].ctrl && keyPress[1].name === "c") {
             process.exit();
+        }
+
+        // space
+        if (keyPress[1].name === "space") {
+            generate_flag = true;
         }
         
         if (suggestionManager.handle_keypress(keyPress)) {
@@ -48,6 +57,7 @@ export async function render() {
             }
         } else {
             if (keyPress[1].name === "backspace") {
+                generate_flag = true;
                 term.write(getBackspaceSequence(keyPress, shell));
             } else {
                 term.write(keyPress[1].sequence);
