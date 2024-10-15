@@ -24,10 +24,10 @@ export async function render() {
 
     term.onData((data) => {
         writeOutput(data);
-        // suggestionManager.render_suggestions();
+        suggestionManager.render_suggestions();
     });
 
-    process.stdin.on("keypress", async (...keyPress: KeyPressEvent) => {
+    process.stdin.on("keypress", (...keyPress: KeyPressEvent) => {
         /*
             The following keys should be controlled by EasyCommands:
             1. `ctrl + c`   exit the process 
