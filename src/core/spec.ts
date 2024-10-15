@@ -12,7 +12,6 @@
         - description   : The description of the command
         - options       : The options of the command (e.g., conda `--help`, node `--version`)
         - subcommands   : The subcommands of the command (e.g., git `clone`)
-        - args          : The arguments of the command (e.g., git clone `<repo>`)
 
     The render order:
     1. subcommands
@@ -45,7 +44,7 @@ export const Specifications = {
                             name: "--help",
                             description: "Show this message and exit.",
                             subcommands: []
-                        }
+                        },
                     }
                 },
                 "deactivate": {
@@ -54,8 +53,9 @@ export const Specifications = {
                     subcommands: {},
                     options: {},
                 },
-            }
+            },
+            options: {}
         },
-    }
+    },
     
 }

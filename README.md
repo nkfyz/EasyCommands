@@ -2,12 +2,15 @@
 
 Welcome to EasyCommands, a tool for IDE-style autocompletion across multiple oprating systems.
 
+![EasyCommands demo](static/image.png)
+
 ## Setup
 
 Install deps:
 
 ```bash
-cd EasyCommands/
+cd EasyCommands/src/
+npm i -D tsx
 npm install .
 ```
 
@@ -15,8 +18,14 @@ npm install .
 
 ```bash
 # within EasyCommands dir
-npm i -D tsx
+cd EasyCommands/
 npx tsx src/index.ts
 ```
 
-type `git` and a space to see the options, enjoy!
+Type `conda` and a space to see the options, enjoy!
+
+## TODO
+
+- Detect space to show suggestions
+- Add more commands to spec
+- Add scripts to spec

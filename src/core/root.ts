@@ -17,10 +17,10 @@ export async function render() {
     if (process.stdin.isTTY) process.stdin.setRawMode(true);
     readline.emitKeypressEvents(process.stdin);
 
-    // writeOutput(ansi.clearScreen);
-    // writeOutput(chalk.red("---------------------------------------------------------------------\n"));
-    // writeOutput(chalk.red("| Welcome to EasyCommands Type 'git' and press space to see suggestions. |\n"));
-    // writeOutput(chalk.red("---------------------------------------------------------------------\n"));
+    writeOutput(ansi.clearTerminal);
+    writeOutput(chalk.red("---------------------------------------------------------------------\n"));
+    writeOutput(chalk.red("| Welcome to EasyCommands Type 'git' and press space to see suggestions. |\n"));
+    writeOutput(chalk.red("---------------------------------------------------------------------\n"));
 
     term.onData((data) => {
         writeOutput(data);

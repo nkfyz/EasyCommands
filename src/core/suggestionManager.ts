@@ -48,7 +48,6 @@ export class SuggestionManager {
 
     _load_suggestions() {
         const cmd = this.term.getCommandState().commandText;
-        console.log(cmd)
         if (cmd) {
             const suggestions = this.commandGenerator.generate_commands(cmd);
             if (suggestions.length > 0) {

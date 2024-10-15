@@ -16,7 +16,6 @@ export class CommandGenerator {
             // todo
         } else {
             const cmd_queue = cmd.split(" ");
-            console.log(cmd_queue)
             var spec = this.spec;
             for (let i=0; i<cmd_queue.length; i++) {
                 spec = spec.subcommands[cmd_queue[i]];
@@ -24,6 +23,11 @@ export class CommandGenerator {
                     return suggestions;
                 }
             }
+            
+            // console.log()
+            // console.log(spec);
+            // console.log(spec.options);
+
             Object.keys(spec.subcommands).forEach(key => {
                 const name = spec.subcommands[key].name;
                 const desc = spec.subcommands[key].description;

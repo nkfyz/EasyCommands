@@ -10,11 +10,10 @@ import fs from "node:fs";
 import stripAnsi from "strip-ansi";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 
-import * as pty from "node-pty";
-import { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
+import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
 import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
-import { Terminal } from "@xterm/headless";
+import xterm from "@xterm/headless";
 import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
 import { gitBashPath } from "../utils/shell.js";
@@ -46,7 +45,7 @@ export class ISTerm implements IPty {
 
   readonly #pty: IPty;
   readonly #ptyEmitter: EventEmitter;
-  readonly #term: Terminal;
+  readonly #term: xterm.Terminal;
   readonly #commandManager: CommandManager;
   readonly #shell: Shell;
 
@@ -64,7 +63,7 @@ export class ISTerm implements IPty {
     this.process = this.#pty.process;
 
     const unicode11Addon = new Unicode11Addon();
-    this.#term = new Terminal({ allowProposedApi: true, rows, cols });
+    this.#term = new xterm.Terminal({ allowProposedApi: true, rows, cols });
     this.#term.loadAddon(unicode11Addon);
     this.#term.unicode.activeVersion = "11";
 
