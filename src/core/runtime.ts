@@ -2,10 +2,12 @@ import { Suggestion } from "./suggestionManager";
 import { Specifications } from "./spec";
 
 export class CommandGenerator {
-    curr_cmd: string[];
+    cmd_queue: string[];
+    spec: any;
 
     constructor() {
-        this.curr_cmd = [];
+        this.cmd_queue = [];
+        this.spec = Specifications;
     }
 
     generate_commands(cmd: string): Suggestion[] {
@@ -13,34 +15,26 @@ export class CommandGenerator {
         if (!cmd) {
             // todo
         } else {
-            var curr_spec = Specifications;
-            for (let i=0; i<this.curr_cmd.length; i++) {
-                curr_spec = curr_spec.subcommands[this.curr_cmd[i]];
-            }
-            if (Specifications[cmd]) {
-                const subcommands = Specifications[cmd].subcommands;
-                for (let i=0; i<subcommands.length; i++) {
-                    suggestions.push(new Suggestion(subcommands[i].name, subcommands[i].description));
+            const cmd_queue = cmd.split(" ");
+            console.log(cmd_queue)
+            var spec = this.spec;
+            for (let i=0; i<cmd_queue.length; i++) {
+                spec = spec.subcommands[cmd_queue[i]];
+                if (!spec) {
+                    return suggestions;
                 }
             }
-            this.curr_cmd.push(cmd);
-            }
+            Object.keys(spec.subcommands).forEach(key => {
+                const name = spec.subcommands[key].name;
+                const desc = spec.subcommands[key].description;
+                suggestions.push(new Suggestion(name, desc));
+            });
+            Object.keys(spec.options).forEach(key => {
+                const name = spec.options[key].name;
+                const desc = spec.options[key].description;
+                suggestions.push(new Suggestion(name, desc));
+            });
+        }
         return suggestions;
     }
-}
-
-export function generate_commands(cmd: string): Suggestion[] {
-    var suggestions: Suggestion[] = []
-    if (!cmd) {
-        // todo
-    } else {
-        if (Specifications[cmd]) {
-            const subcommands = Specifications[cmd].subcommands;
-            for (let i=0; i<subcommands.length; i++) {
-                suggestions.push(new Suggestion(subcommands[i].name, subcommands[i].description));
-            }
-        }
-    }
-    return suggestions;
-    
 }

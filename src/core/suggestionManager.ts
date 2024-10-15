@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { ISTerm } from "../isterm/pty.js";
 import { writeOutput, PERFIX, FILLME, KeyPressEvent } from "../utils/common.js";
 import process from 'node:process';
-import { generate_commands, CommandGenerator } from "./runtime.js";
+import { CommandGenerator } from "./runtime.js";
 
 
 export class Suggestion {

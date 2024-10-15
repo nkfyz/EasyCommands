@@ -291,7 +291,6 @@ export class CommandManager {
     }
 
     if (this.#activeCommand.promptEndMarker == null) return;
-
     // if we haven't fond the prompt yet, poll over the next 5 lines searching for it
     if (this.#activeCommand.promptText == null && withinPollDistance) {
       for (let i = globalCursorPosition; i < this.#activeCommand.promptEndMarker.line + maxPromptPollDistance; i++) {

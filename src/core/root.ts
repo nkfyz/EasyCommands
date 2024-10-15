@@ -17,11 +17,14 @@ export async function render() {
     if (process.stdin.isTTY) process.stdin.setRawMode(true);
     readline.emitKeypressEvents(process.stdin);
 
-    writeOutput("\n 🚀 Welcome to isterm! Type 'git' and press space to see suggestions. \n");
+    // writeOutput(ansi.clearScreen);
+    // writeOutput(chalk.red("---------------------------------------------------------------------\n"));
+    // writeOutput(chalk.red("| Welcome to EasyCommands Type 'git' and press space to see suggestions. |\n"));
+    // writeOutput(chalk.red("---------------------------------------------------------------------\n"));
 
     term.onData((data) => {
         writeOutput(data);
-        suggestionManager.render_suggestions();
+        // suggestionManager.render_suggestions();
     });
 
     process.stdin.on("keypress", async (...keyPress: KeyPressEvent) => {
@@ -36,7 +39,7 @@ export async function render() {
         if (keyPress[1].ctrl && keyPress[1].name === "c") {
             process.exit();
         }
-
+        
         if (suggestionManager.handle_keypress(keyPress)) {
             if (suggestionManager.update_suggestions(keyPress)) {
                 // update list here
