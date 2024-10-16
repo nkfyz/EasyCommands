@@ -20,10 +20,12 @@
 
 import { conda } from '../spec/conda.js';
 import { cd } from '../spec/cd.js';
+import { git } from '../spec/git.js';
 
 export const Specifications = {
     subcommands: {
         "conda": conda,
         "cd": cd,
+        "git": git,
     },
 }
