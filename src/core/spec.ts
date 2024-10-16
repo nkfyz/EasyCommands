@@ -19,9 +19,11 @@
 */
 
 import { conda } from '../spec/conda.js';
+import { cd } from '../spec/cd.js';
 
 export const Specifications = {
     subcommands: {
         "conda": conda,
+        "cd": cd,
     },
 }
