@@ -49,7 +49,7 @@ export class SuggestionManager {
     _load_suggestions() {
         const cmd = this.term.getCommandState().commandText;
         if (cmd) {
-            const suggestions = this.commandGenerator.generate_commands(cmd);
+            const suggestions = this.commandGenerator.generate_commands(cmd, this.term.cwd);
             if (suggestions.length > 0) {
                 this.suggestions = suggestions;
                 this._render_suggestions();

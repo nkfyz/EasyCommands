@@ -10,7 +10,7 @@ export class CommandGenerator {
         this.spec = Specifications;
     }
 
-    generate_commands(cmd: string): Suggestion[] {
+    generate_commands(cmd: string, cwd: string): Suggestion[] {
         var suggestions: Suggestion[] = []
         if (!cmd) {
             // todo
@@ -28,23 +28,19 @@ export class CommandGenerator {
             // console.log()
             // console.log(spec);
             // console.log(spec.options);
-            var flag = false;
-            var command_func = undefined;
             if (typeof spec.subcommands === 'function') {
-                flag = true;
-                command_func = spec.subcommands;
-                spec.subcommands = spec.subcommands();
-            }
-
-            Object.keys(spec.subcommands).forEach(key => {
-                const name = spec.subcommands[key].name;
-                const desc = spec.subcommands[key].description;
-                suggestions.push(new Suggestion(name, desc));
-            });
-
-            if (flag) {
-                spec.subcommands = command_func;
-                flag = false;
+                const subcommands = spec.subcommands(cwd);
+                Object.keys(subcommands).forEach(key => {
+                    const name = subcommands[key].name;
+                    const desc = subcommands[key].description;
+                    suggestions.push(new Suggestion(name, desc));
+                });
+            } else {
+                Object.keys(spec.subcommands).forEach(key => {
+                    const name = spec.subcommands[key].name;
+                    const desc = spec.subcommands[key].description;
+                    suggestions.push(new Suggestion(name, desc));
+                });
             }
 
             Object.keys(spec.options).forEach(key => {
