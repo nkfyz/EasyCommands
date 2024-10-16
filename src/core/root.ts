@@ -47,11 +47,6 @@ export async function render() {
         if (keyPress[1].ctrl && keyPress[1].name === "c") {
             process.exit();
         }
-
-        // space
-        if (keyPress[1].name === "space") {
-            generate_flag = true;
-        }
         
         if (suggestionManager.handle_keypress(keyPress)) {
             if (suggestionManager.update_suggestions(keyPress)) {
@@ -60,12 +55,16 @@ export async function render() {
                 term.write(keyPress[1].sequence);
             }
         } else {
-            if (keyPress[1].name === "backspace") {
+            if (keyPress[1].name === "backspace" || keyPress[1].name === "space") {
                 generate_flag = true;
                 term.write(getBackspaceSequence(keyPress, shell));
             } else {
                 term.write(keyPress[1].sequence);
             }
         }
+    });
+
+    process.stdout.on("resize", () => {
+        term.resize(process.stdout.columns, process.stdout.rows);
     });
 }

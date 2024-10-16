@@ -73,7 +73,9 @@ export class SuggestionManager {
                     ansi.cursorHide + 
                     '\n' + 
                     ansi.eraseLine + 
-                    chalk.green.bold(PERFIX + this.suggestions[i].name) + 
+                    chalk.gray('┃') +
+                    chalk.hex('#f57fe0').bold(PERFIX) + 
+                    chalk.green.bold(this.suggestions[i].name) + 
                     '\t' +
                     chalk.gray(this.suggestions[i].description)
                 )
@@ -82,6 +84,7 @@ export class SuggestionManager {
                     ansi.cursorHide + 
                     '\n' + 
                     ansi.eraseLine + 
+                    chalk.gray('┃') +
                     FILLME + this.suggestions[i].name + 
                     '\t' +
                     chalk.gray(this.suggestions[i].description)
@@ -97,7 +100,8 @@ export class SuggestionManager {
             ansi.cursorLeft + 
             ansi.eraseEndLine + 
             chalk.gray(
-                '  [' + 
+                FILLME + 
+                ' [' + 
                 (this.activate_id + 1) + 
                 '/' + 
                 this.suggestions.length + 

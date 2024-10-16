@@ -2,8 +2,8 @@ export const writeOutput = (data: string) => {
     process.stdout.write(data);
 };
 
-export const PERFIX = '> ';
-export const FILLME = '  ';
+export const PERFIX = ' > ';
+export const FILLME = '   ';
 
 export type KeyPressEvent = [string | null | undefined, KeyPress];
 
