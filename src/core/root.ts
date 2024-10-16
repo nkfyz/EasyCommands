@@ -20,9 +20,13 @@ export async function render() {
     var generate_flag = false;
 
     writeOutput(ansi.clearTerminal);
-    writeOutput(chalk.red("---------------------------------------------------------------------\n"));
-    writeOutput(chalk.red("| Welcome to EasyCommands Type 'git' and press space to see suggestions. |\n"));
-    writeOutput(chalk.red("---------------------------------------------------------------------\n"));
+    writeOutput(chalk.red("---------------------------------------------------------------------------\n"));
+    writeOutput(chalk.red("| Welcome to EasyCommands. Type 'git' and press space to see suggestions. |\n"));
+    writeOutput(chalk.red("| Type 'git' and press space to see suggestions.                          |\n"));
+    writeOutput(chalk.red("| Author: Yaoyao                                                          |\n"));
+    writeOutput(chalk.red("| E-mail: fyz@mail.nankai.edu.cn                                          |\n"));
+    writeOutput(chalk.red("| Github: https://github.com/nkfyz/EasyCommands.git                       |\n"));
+    writeOutput(chalk.red("---------------------------------------------------------------------------\n"));
 
     term.onData((data) => {
         writeOutput(data);

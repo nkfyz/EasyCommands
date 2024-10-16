@@ -28,12 +28,25 @@ export class CommandGenerator {
             // console.log()
             // console.log(spec);
             // console.log(spec.options);
+            var flag = false;
+            var command_func = undefined;
+            if (typeof spec.subcommands === 'function') {
+                flag = true;
+                command_func = spec.subcommands;
+                spec.subcommands = spec.subcommands();
+            }
 
             Object.keys(spec.subcommands).forEach(key => {
                 const name = spec.subcommands[key].name;
                 const desc = spec.subcommands[key].description;
                 suggestions.push(new Suggestion(name, desc));
             });
+
+            if (flag) {
+                spec.subcommands = command_func;
+                flag = false;
+            }
+
             Object.keys(spec.options).forEach(key => {
                 const name = spec.options[key].name;
                 const desc = spec.options[key].description;

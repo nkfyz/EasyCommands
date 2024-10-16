@@ -18,44 +18,10 @@
     2. options
 */
 
+import { conda } from '../spec/conda.js';
+
 export const Specifications = {
     subcommands: {
-        "conda": {
-            name: "conda",
-            description: "Conda is a tool for managing and deploying applications, environments and packages.",
-            subcommands: {
-                "activate": {
-                    name: "activate",
-                    description: "Activate an environment",
-                    subcommands: {
-                        "oss-remover": {
-                            name: "oss-remover",
-                            description: "/path/to/conda/oss-remover",
-                            subcommands: []
-                        },
-                        "base": {
-                            name: "base",
-                            description: "/path/to/conda/base",
-                            subcommands: []
-                        }
-                    },
-                    options: {
-                        "--help": {
-                            name: "--help",
-                            description: "Show this message and exit.",
-                            subcommands: []
-                        },
-                    }
-                },
-                "deactivate": {
-                    name: "deactivate",
-                    description: "Deactivate an environment",
-                    subcommands: {},
-                    options: {},
-                },
-            },
-            options: {}
-        },
+        "conda": conda,
     },
-    
 }
