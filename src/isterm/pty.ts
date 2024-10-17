@@ -12,13 +12,13 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 import pty, { IPty, IEvent } from "@homebridge/node-pty-prebuilt-multiarch";
 import { Shell, userZdotdir, zdotdir } from "../utils/shell.js";
-import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/ansi.js";
+import { IsTermOscPs, IstermOscPt, IstermPromptStart, IstermPromptEnd } from "../utils/shell.js";
 import xterm from "@xterm/headless";
 import type { ICellData } from "@xterm/xterm/src/common/Types.js";
 import { CommandManager, CommandState } from "./commandManager.js";
 import { gitBashPath } from "../utils/shell.js";
 import styles from "ansi-styles";
-import * as ansi from "../utils/ansi.js";
+import * as ansi from "../utils/shell.js";
 
 const ISTermOnDataEvent = "data";
 

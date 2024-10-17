@@ -25,9 +25,6 @@ export class CommandGenerator {
                 }
             }
             
-            // console.log()
-            // console.log(spec);
-            // console.log(spec.options);
             if (typeof spec.subcommands === 'function') {
                 const subcommands = spec.subcommands(cwd);
                 Object.keys(subcommands).forEach(key => {
@@ -42,12 +39,13 @@ export class CommandGenerator {
                     suggestions.push(new Suggestion(name, desc));
                 });
             }
-
-            Object.keys(spec.options).forEach(key => {
-                const name = spec.options[key].name;
-                const desc = spec.options[key].description;
-                suggestions.push(new Suggestion(name, desc));
-            });
+            if (spec.options) {
+                Object.keys(spec.options).forEach(key => {
+                    const name = spec.options[key].name;
+                    const desc = spec.options[key].description;
+                    suggestions.push(new Suggestion(name, desc));
+                });
+            }
         }
         return suggestions;
     }
